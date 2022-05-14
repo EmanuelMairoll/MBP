@@ -3,11 +3,11 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 
-class Receiver(dropoffFolder: File, private val port: Int) {
+class Receiver(private val dropoffFolder: File, private val port: Int) {
 
 	private var socket: DatagramSocket? = null
-	private var digest = PacketDigest(dropoffFolder)
-	private var sequencer = PacketSequencer(128, 1024, digest::continueSequence, digest::cancelSequence)
+	private var activeTransmissions = hashMapOf<Int, Transmission>()
+
 
 	fun start() {
 		socket = DatagramSocket(port)
@@ -22,7 +22,7 @@ class Receiver(dropoffFolder: File, private val port: Int) {
 			try {
 				val packet = Packet(udpPacket.data, udpPacket.length)
 				if (packet.seqNr % 1u == 0u || packet.packetBody !is DataPacketBody) {
-					//println("Received Packet $packet")
+					println("Received Packet $packet")
 				}
 
 				when (packet.packetBody) {
@@ -31,15 +31,41 @@ class Receiver(dropoffFolder: File, private val port: Int) {
 					else -> {}
 				}
 
-
-				val transmissionId = transmissionId(packet.uid, udpPacket.address, udpPacket.port)
-				sequencer.push(packet, transmissionId)
+				receivePacket(packet, udpPacket)
 			} catch (e: Exception) {
-				println("Discarded Packet with content [" + udpPacket.data.copyOfRange(0, udpPacket.length).toHex() + "]")
+				println(
+					"Discarded Packet with content [" + udpPacket.data.copyOfRange(0, udpPacket.length).toHex() + "]"
+				)
 			}
+		}
+	}
+
+	private fun receivePacket(packet: Packet, udpPacket: DatagramPacket) {
+		val transmissionId = transmissionId(packet.uid, udpPacket.address, udpPacket.port)
+		val transmission = activeTransmissions.getOrPut(transmissionId) {
+			Transmission(
+				packet.uid,
+				udpPacket.address,
+				udpPacket.port,
+				System.currentTimeMillis(),
+				32,
+				dropoffFolder
+			)
+		}
+
+		try {
+			transmission.push(packet)
+
+			if (transmission.isDone) {
+				activeTransmissions -= transmissionId
+			}
+		} catch (e: Transmission.TransmissionException) {
+			println("Terminated transmission due to $e")
+			activeTransmissions -= transmissionId
 		}
 	}
 
 	private fun transmissionId(uid: UByte, receiverAddress: InetAddress, receiverPort: Int) =
 		uid.hashCode() + receiverAddress.hashCode() + receiverPort.hashCode()
+
 }
