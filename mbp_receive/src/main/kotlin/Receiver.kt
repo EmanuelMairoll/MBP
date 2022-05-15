@@ -2,8 +2,13 @@ import java.io.File
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import kotlin.random.Random
 
-class Receiver(private val dropoffFolder: File, private val port: Int) {
+class Receiver(
+	private val dropoffFolder: File,
+	private val port: Int,
+	private val retransmissionDelay: Int
+	) {
 
 	private var socket: DatagramSocket? = null
 	private var activeTransmissions = hashMapOf<Int, Transmission>()
@@ -18,6 +23,13 @@ class Receiver(private val dropoffFolder: File, private val port: Int) {
 		while (true) {
 			val udpPacket = DatagramPacket(buffer, buffer.size)
 			socket!!.receive(udpPacket)
+
+			/*
+			if (Random.nextInt(10) == 0){
+				println("dropping packet")
+				continue
+			}
+			 */
 
 			try {
 				val packet = Packet(udpPacket.data, udpPacket.length)
@@ -47,9 +59,10 @@ class Receiver(private val dropoffFolder: File, private val port: Int) {
 				packet.uid,
 				udpPacket.address,
 				udpPacket.port,
-				System.currentTimeMillis(),
 				32,
-				dropoffFolder
+				dropoffFolder,
+				retransmissionDelay,
+				this::answer,
 			)
 		}
 
@@ -63,6 +76,12 @@ class Receiver(private val dropoffFolder: File, private val port: Int) {
 			println("Terminated transmission due to $e")
 			activeTransmissions -= transmissionId
 		}
+	}
+
+	private fun answer(source: Transmission, packet: Packet) {
+		val bytes = packet.serialize()
+		val udpPacket = DatagramPacket(bytes, bytes.size, source.receiverAddress, source.receiverPort)
+		socket!!.send(udpPacket)
 	}
 
 	private fun transmissionId(uid: UByte, receiverAddress: InetAddress, receiverPort: Int) =

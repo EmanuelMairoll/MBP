@@ -3,7 +3,7 @@ import java.net.InetAddress
 
 fun main(args: Array<String>) {
 	if (args.size !in 2..5) {
-		println("Usage: program <path to file> <receiver ip> [port] [max chunk size]")
+		println("Usage: program <path to file> <receiver ip> [port] [chunk size] [retransmission delay]")
 		return
 	}
 
@@ -14,9 +14,15 @@ fun main(args: Array<String>) {
 	}
 
 	val receiverIp = InetAddress.getByName(args[1])
-	val port = if (args.size in 3..5) args[2].toInt() else 6969
-	val chunkSize = if (args.size in 4..5) args[3].toInt() else 1400
-	val packetDelayUs = if (args.size in 5..5) args[4].toLong() else 100
+	val port = if (args.size >= 3) args[2].toInt() else 6969
+	val chunkSize = if (args.size >= 4) args[3].toInt() else 1400
+	val retransmissionDelayMs = if (args.size >= 5) args[4].toInt() else 1000
 
-	Sender(fileToTransfer, receiverIp, port, chunkSize, packetDelayUs).send()
+	Sender(
+		fileToTransfer,
+		receiverIp,
+		port,
+		chunkSize,
+		retransmissionDelayMs
+	).send()
 }
