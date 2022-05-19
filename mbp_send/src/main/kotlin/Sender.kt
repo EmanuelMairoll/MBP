@@ -90,11 +90,6 @@ class Sender(
 					val udpResponse = DatagramPacket(buffer, buffer.size)
 					socket.receive(udpResponse)
 
-					if (rand.nextInt(10) == 0) {
-						println("dropping ACK")
-						continue@retransmission
-					}
-
 					val response = Packet(udpResponse.data, udpResponse.length)
 					when (response.packetBody) {
 						is AckPacketBody -> {
