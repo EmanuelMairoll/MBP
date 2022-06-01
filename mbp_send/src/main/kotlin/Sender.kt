@@ -81,7 +81,7 @@ class Sender(
 
 		// Control flow here is ugly as hell, but necessary IMO
 		retransmission@ for (i in 1..5) {
-			println("Sending Packet $packet")
+			//println("Sending Packet $packet")
 			socket.send(udpPacket)
 
 			do {
@@ -103,6 +103,7 @@ class Sender(
 						else -> throw Exception("Receiver responded with unknown Packet")
 					}
 				} catch (e: SocketTimeoutException) {
+					println("Retransmission Packet Nr ${packet.seqNr}")
 					continue@retransmission
 				}
 			} while ((ackPacket == null) || (ackPacket.seqNr != packet.seqNr))

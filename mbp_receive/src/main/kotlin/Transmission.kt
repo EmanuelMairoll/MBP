@@ -41,20 +41,16 @@ data class Transmission(
 		try {
 			if (packet.seqNr == nextSeqNr) {
 				if (cachedPackets.isEmpty()) {
-					println("A")
 					continueInOrder(packet)
 					nextSeqNr++
 				} else {
-					println("B")
 					cachedPackets += packet
 					continueWithCached()
 				}
 			} else {
 				if (cachedPackets.size < maxOOSCache) {
-					println("C")
 					cachedPackets += packet
 				} else {
-					println("D")
 					throw SequencingException
 				}
 			}
