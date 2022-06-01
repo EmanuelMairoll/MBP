@@ -1,5 +1,6 @@
 import com.github.eprst.murmur3.HashingSink128
 import java.io.File
+import java.io.IOException
 
 class PacketFileWriter(
 	private val dropoffFolder: File,
@@ -7,6 +8,7 @@ class PacketFileWriter(
 ) {
 	private val f = run {
 		val f = File(dropoffFolder, info.fileName)
+		if (!isParent(dropoffFolder, f)) throw Transmission.ProtocolException
 		f.delete()
 		f
 	}
@@ -39,6 +41,26 @@ class PacketFileWriter(
 	fun del(){
 		os.close()
 		f.delete()
+	}
+
+	private fun isParent(parent: File, file: File): Boolean {
+		var p = parent
+		var f: File?
+		try {
+			p = p.canonicalFile
+			f = file.canonicalFile
+		} catch (e: IOException) {
+			return false
+		}
+		while (f != null) {
+			// equals() only works for paths that are normalized, hence the need for
+			// getCanonicalFile() above. "a" isn't equal to "./a", for example.
+			if (p == f) {
+				return true
+			}
+			f = f.parentFile
+		}
+		return false
 	}
 
 }
