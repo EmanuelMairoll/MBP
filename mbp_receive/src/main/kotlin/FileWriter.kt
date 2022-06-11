@@ -2,7 +2,7 @@ import com.github.eprst.murmur3.HashingSink128
 import java.io.File
 import java.io.IOException
 
-class PacketFileWriter(
+class FileWriter (
 	private val dropoffFolder: File,
 	private val info: InfoPacketBody
 ) {

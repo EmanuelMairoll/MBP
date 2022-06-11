@@ -2,7 +2,6 @@ import java.io.File
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
-import kotlin.random.Random
 
 class Receiver(
 	private val dropoffFolder: File,
@@ -24,17 +23,10 @@ class Receiver(
 			val udpPacket = DatagramPacket(buffer, buffer.size)
 			socket!!.receive(udpPacket)
 
-			/*
-			if (Random.nextInt(10) == 0){
-				println("dropping packet")
-				continue
-			}
-			 */
-
 			try {
 				val packet = Packet(udpPacket.data, udpPacket.length)
 				if (packet.seqNr % 1u == 0u || packet.packetBody !is DataPacketBody) {
-					println("Received Packet $packet")
+					//println("Received Packet $packet")
 				}
 
 				when (packet.packetBody) {
@@ -59,7 +51,8 @@ class Receiver(
 				packet.uid,
 				udpPacket.address,
 				udpPacket.port,
-				32,
+				256,
+				16,
 				dropoffFolder,
 				retransmissionDelay,
 				this::answer,
@@ -81,6 +74,8 @@ class Receiver(
 	private fun answer(source: Transmission, packet: Packet) {
 		val bytes = packet.serialize()
 		val udpPacket = DatagramPacket(bytes, bytes.size, source.receiverAddress, source.receiverPort)
+
+		//println("Sending Packet $packet")
 		socket!!.send(udpPacket)
 	}
 

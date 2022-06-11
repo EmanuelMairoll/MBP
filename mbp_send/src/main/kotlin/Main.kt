@@ -16,13 +16,11 @@ fun main(args: Array<String>) {
 	val receiverIp = InetAddress.getByName(args[1])
 	val port = if (args.size >= 3) args[2].toInt() else 6969
 	val chunkSize = if (args.size >= 4) args[3].toInt() else 1400
-	val retransmissionDelayMs = if (args.size >= 5) args[4].toInt() else 1000
 
 	Sender(
 		fileToTransfer,
 		receiverIp,
 		port,
 		chunkSize,
-		retransmissionDelayMs
 	).send()
 }
